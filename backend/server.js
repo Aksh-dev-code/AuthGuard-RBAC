@@ -3,6 +3,8 @@ const express = require('express');
 const cors = require('cors');
 const { config } = require('dotenv');
 const prisma = require('.prisma/config')
+const authRoutes = require('../src/routes/authRoutes.js');
+const { loginController } = require('./src/controllers/authController.js');
 
 const app = express();
 
@@ -13,6 +15,8 @@ app.use(express.urlencoded({extended:true}))
 app.get("/",(req,res)=>{
     res.json({message:'Backend server is running'});
 })
+
+app.use('/auth',authRoutes)
 
 const PORT = process.env.PORT ||3000;
 

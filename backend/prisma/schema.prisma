@@ -6,24 +6,67 @@ datasource db {
   provider = "postgresql"
 }
 
-model User {
-  id       Int    @id @default(autoincrement())
-  email    String @unique
-  password String
-  roleId   Int
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+}
 
-  role     Role @relation(fields: [roleId], references: [id])
+model User {
+  id        Int        @id @default(autoincrement())
+  name      String
+  email     String     @unique
+  password  String
+  status    UserStatus @default(ACTIVE)
+
+  roles     UserRole[]
+
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([createdAt])
+  @@index([status])
 }
 
 model Role {
-  id          Int          @id @default(autoincrement())
-  name        String       @unique
-  users       User[]
-  permissions Permission[]
+  id          Int            @id @default(autoincrement())
+  name        String         @unique
+
+  users       UserRole[]
+  permissions RolePermission[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
 }
 
 model Permission {
-  id    Int    @id @default(autoincrement())
-  name  String @unique
-  roles Role[]
+  id          Int            @id @default(autoincrement())
+  name        String         @unique
+
+  roles       RolePermission[]
+
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+}
+
+model UserRole {
+  userId Int
+  roleId Int
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  role Role @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  @@id([userId, roleId])
+  @@index([roleId])
+}
+
+model RolePermission {
+  roleId       Int
+  permissionId Int
+
+  role       Role       @relation(fields: [roleId], references: [id], onDelete: Cascade)
+  permission Permission @relation(fields: [permissionId], references: [id], onDelete: Cascade)
+
+  @@id([roleId, permissionId])
+  @@index([permissionId])
 }
