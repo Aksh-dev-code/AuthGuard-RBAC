@@ -3,6 +3,11 @@ const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const { use } = require('react');
 
+exports.getMe = async(req ,res) =>{
+    res.json({success :true})
+}
+
+
 
 exports.loginController = async (req,res) => {
     try{
