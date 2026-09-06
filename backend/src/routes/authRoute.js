@@ -6,6 +6,6 @@ const { getMe } = require('../controllers/authController');
 router.post("/login",loginController)
 router.post("/register",registerController)
 router.get("/me",authMiddleware,getMe) // get logged in user data
-// router.post("/me",)  // update logged in user data
+router.post("/me",)  // update logged in user data
 
 module.exports = router;

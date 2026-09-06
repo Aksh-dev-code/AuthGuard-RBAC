@@ -4,8 +4,44 @@ const jwt = require('jsonwebtoken');
 const { use } = require('react');
 
 exports.getMe = async(req ,res) =>{
-    res.json({success :true})
-}
+    try{
+        const{id,name,email,roles} = req.user;
+        res.json({success: true,user:{id,name,email,roles: roles.map(r => r.name)}});
+    }catch(error){
+        res.status(500).json({success:false,message:'Error getting me data'})
+    }
+
+
+exports.updateMe = async(req ,res) =>{
+    try{
+        const{id} = req.user;
+        const{name, email, password} = req.body;
+
+        const updateData = {};
+        if (name) updateData.name = name;
+        if (email) updateData.name = email;
+        if (password) {
+            const salt = await bcrypt.genSalt(10)
+            updateData.password =  await bcrypt.hash(password,salt)
+        }
+        const updateUser = await prisma.user.update({
+            where:{id:id},
+            data :updateData
+        });
+
+        res.json({
+            success:true,
+            message:'Profile updated succesfully',
+            user:{
+                id:updateUser.id,
+                name:updateUser.name,
+                email:updateUser.email
+            }
+        })
+
+    }catch(error){
+        res.status(500).json({success:false,message:'Error updating me data'})
+    }
 
 
 
