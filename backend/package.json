@@ -8,6 +8,7 @@
     "nodemon": "nodemon server.js",
     "postinstall": "prisma skills sync || exit 0"
   },
+  "prisma":{"node src/config/seed.js"},
   "keywords": [],
   "author": "",
   "license": "ISC",

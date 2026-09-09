@@ -17,7 +17,7 @@ exports.checkPermission = (resource,action) =>{
              // Check permission 
              const hasPermission  = user.roles.some(role=>
                 role.permissions.some(
-                    perm =>perm.resource === resource && perm.action ===action
+                    perm => perm.resource === resource && perm.action ===action
                 )
              ) ;
             if (!hasPermission) return res.status(403).json({success:false,message:'Access denied'})
