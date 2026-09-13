@@ -1,54 +1,128 @@
-const { PrismaClient } = require("@prisma/client");
+require("dotenv/config");
 
-const prisma = new PrismaClient();
+const { PrismaClient } = require("@prisma/client");
+const { PrismaPg } = require("@prisma/adapter-pg");
+
+const adapter = new PrismaPg({
+    connectionString: process.env.DATABASE_URL,
+});
+
+const prisma = new PrismaClient({
+    adapter,
+});
 
 async function main() {
-    const adminPermissions = [
-        { resource: "users", action: "CREATE" },
-        { resource: "users", action: "READ" },
-        { resource: "users", action: "UPDATE" },
-        { resource: "users", action: "DELETE" },
 
-        { resource: "roles", action: "CREATE" },
-        { resource: "roles", action: "READ" },
-        { resource: "roles", action: "UPDATE" },
-        { resource: "roles", action: "DELETE" },
+    // 1. Create permissions
 
-        { resource: "permissions", action: "CREATE" },
-        { resource: "permissions", action: "READ" },
-        { resource: "permissions", action: "UPDATE" },
-        { resource: "permissions", action: "DELETE" },
+    const permissionNames = [
+        "users:CREATE",
+        "users:READ",
+        "users:UPDATE",
+        "users:DELETE",
 
-        { resource: "resources", action: "READ" },
+        "roles:CREATE",
+        "roles:READ",
+        "roles:UPDATE",
+        "roles:DELETE",
+
+        "permissions:CREATE",
+        "permissions:READ",
+        "permissions:UPDATE",
+        "permissions:DELETE",
+
+        "resources:READ",
     ];
 
-    // Create admin role with permissions
-    const adminRole = await prisma.role.create({
-        data: {
-            name: "admin",
-            permissions: {
-                create: adminPermissions,
+    const permissions = [];
+
+    for (const name of permissionNames) {
+        const permission = await prisma.permission.upsert({
+            where: {
+                name,
             },
+            update: {},
+            create: {
+                name,
+            },
+        });
+
+        permissions.push(permission);
+    }
+
+    console.log(`Created/found ${permissions.length} permissions`);
+    // 2. Create admin role
+
+    const adminRole = await prisma.role.upsert({
+        where: {
+            name: "admin",
+        },
+        update: {},
+        create: {
+            name: "admin",
         },
     });
 
-    console.log("Admin role created with ID:", adminRole.id);
+    console.log("Admin role ID:", adminRole.id);
 
-    // Create admin user and assign admin role
-    const adminUser = await prisma.user.create({
-        data: {
-            name: "Admin User",
-            email: "admin134@gmail.com",
-            password: "$2wertyuiuytreDFGJreteFETWEEFERY",
-            role: {
-                connect: {
-                    id: adminRole.id,
+    // -----------------------------
+    // 3. Connect permissions to role
+    // -----------------------------
+    for (const permission of permissions) {
+        await prisma.rolePermission.upsert({
+            where: {
+                roleId_permissionId: {
+                    roleId: adminRole.id,
+                    permissionId: permission.id,
                 },
             },
+            update: {},
+            create: {
+                roleId: adminRole.id,
+                permissionId: permission.id,
+            },
+        });
+    }
+
+    console.log("Admin permissions assigned");
+
+    // 4. Create admin user
+    const adminUser = await prisma.user.upsert({
+        where: {
+            email: "admin134@gmail.com",
+        },
+        update: {},
+        create: {
+            name: "Admin User",
+            email: "admin134@gmail.com",
+
+            // Replace this with a real bcrypt hash later
+            password: "$2b$10$REPLACE_WITH_REAL_BCRYPT_HASH",
+
+            status: "ACTIVE",
         },
     });
 
-    console.log("Admin user created with ID:", adminUser.id);
+    console.log("Admin user ID:", adminUser.id);
+
+    // -----------------------------
+    // 5. Connect user to admin role
+    // -----------------------------
+    await prisma.userRole.upsert({
+        where: {
+            userId_roleId: {
+                userId: adminUser.id,
+                roleId: adminRole.id,
+            },
+        },
+        update: {},
+        create: {
+            userId: adminUser.id,
+            roleId: adminRole.id,
+        },
+    });
+
+    console.log("Admin role assigned to user");
 }
 
 main()

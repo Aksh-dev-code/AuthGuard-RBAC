@@ -5,7 +5,8 @@ const { config } = require('dotenv');
 const prisma = require('.prisma/config')
 const authRoutes = require('../src/routes/authRoutes.js');
 const roleRoutes = require('../src/routes/rolRoutes.js');
-const { loginController } = require('./src/controllers/authController.js');
+const permissionRoutes = require('../src/routes/permissionRoutes.js')
+const {loginController } = require('./src/controllers/authController.js');
 
 const app = express();
 
@@ -19,6 +20,7 @@ app.get("/",(req,res)=>{
 
 app.use('/auth',authRoutes)
 app.use('/roles',roleRoutes)
+app.use('/permission',permissionRoutes)
 
 const PORT = process.env.PORT ||3000;
 
