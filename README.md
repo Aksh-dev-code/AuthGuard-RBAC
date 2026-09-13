@@ -1,6 +1,6 @@
 # AuthGuard-RBAC
 
-A full-stack **Role-Based Access Control (RBAC)** application built with **React, Node.js, Express, Prisma, and PostgreSQL**.
+A full-stack **Role-Based Access Control (RBAC)** application built with **React, Node.js, TypeScript Express, Prisma, and PostgreSQL**.
 
 AuthGuard-RBAC allows administrators to manage users, roles, and permissions and control what users are allowed to access through role-based authorisation.
 
