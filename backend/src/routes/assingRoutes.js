@@ -5,4 +5,8 @@ const {checkPermission} = require('../middleware/checkPermission')
 
 const router = express.Router();
 // assisng role to user
-router.post('/ro')
+router.post('/role-to-user', authMiddleware,checkPermission('roles','ASSING'),assinRoleToUserController)
+
+router.post('/permission-to-user', authMiddleware,checkPermission('permissions','ASSING'),assinPermissionToUserController)
+
+module.exports = router;
