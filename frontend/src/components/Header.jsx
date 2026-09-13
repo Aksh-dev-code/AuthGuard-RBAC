@@ -1,23 +1,71 @@
-import React from 'react'
-import { NavLink } from 'react-router-dom'
+import {
+  Bell,
+  Search,
+  UserCircle,
+} from "lucide-react";
 
-const Header = ()=>{
-    return(
-        <header className='bg-gray-800 text-white p4 flex space-x-6'>
-            <NavLink to = "/"
-            end 
-            className = {({isActive}) =>
-                isActive
-                    'text-yellow-400 font-semibol'
-                    'hover:text-yellow-300 transition-colors'
-            }
-            >
-              Home 
-            </NavLink>
-            <NavLink to = "/login"
-            className={({isActive})}></NavLink>
-        </>
-    )
-}
+import {
+  useAuth,
+} from "../context/AuthContext";
 
-export default Header
+
+export default function Header() {
+
+  const { user } =
+    useAuth();
+
+
+  return (
+    <header className="topbar">
+
+      <div className="search-box">
+
+        <Search size={18} />
+
+        <input
+          placeholder="Search..."
+        />
+
+      </div>
+
+
+      <div className="topbar-actions">
+
+        <button
+          className="icon-button"
+        >
+          <Bell size={19} />
+        </button>
+
+
+        <div className="profile">
+
+          <UserCircle size={34} />
+
+          <div>
+
+            <strong>
+              {
+                user?.name ||
+                user?.email ||
+                "Administrator"
+              }
+            </strong>
+
+            <span>
+              {
+                user?.role?.name ||
+                user?.role ||
+                "Admin"
+              }
+            </span>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </header>
+  );
+}   
