@@ -40,6 +40,7 @@ AuthGuard-RBAC allows administrators to manage users, roles, and permissions and
 ### Backend
 
 * Node.js
+* TypeScript
 * Express.js
 * JWT
 * bcryptjs
@@ -754,9 +755,9 @@ It is designed as a practical full-stack project for understanding **authenticat
 
 B.Tech Computer Science & Engineering
 
-GitHub: `Aksh-dev-code`
+GitHub: `github.com/Aksh-dev-code`
 
-LinkedIn: `Anuska maity`
+LinkedIn: `https://www.linkedin.com/in/akshmaity/`
 
 ---
 
