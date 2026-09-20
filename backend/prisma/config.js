@@ -1,22 +1,21 @@
-const {PrismaClient} = require('@prisma/client');
-const { default: prismaConfig } = require('../prisma.config');
+const { PrismaClient } = require("@prisma/client");
+const { PrismaPg } = require("@prisma/adapter-pg");
 
-try {
-    require('@prisma/client');
-
-}catch (e) {
-    console.error('Prisma client not generated . Run:');
-    console.error('npx prisma generated');
-    console.exit(1);
-}
-
-const prisma = new prismaConfig({
-    log:['query','info','warn','error']
+const adapter = new PrismaPg({
+  connectionString: process.env.DATABASE_URL,
 });
 
-prisma.$connect()   
-    .then(()=> console.log('prisma connected successfully'))
-    .catch(err =>{
-        console.error('prisma connection failed',err);
-        process.exit(1);
-    })
+const prisma = new PrismaClient({
+  adapter,
+  log: ["query", "info", "warn", "error"],
+});
+
+prisma
+  .$connect()
+  .then(() => console.log("Prisma connected successfully"))
+  .catch((err) => {
+    console.error("Prisma connection failed:", err);
+    process.exit(1);
+  });
+
+module.exports = prisma;

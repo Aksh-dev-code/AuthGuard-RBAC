@@ -1,6 +1,5 @@
 
-const prisma = require("../config/prisma");
-
+const prisma = require("../../prisma/config");
 // CREATE ROLE
 // POST /api/roles
 
