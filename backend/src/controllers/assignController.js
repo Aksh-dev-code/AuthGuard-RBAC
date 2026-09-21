@@ -1,3 +1,4 @@
+const prisma = require("../../prisma/config");
 
 const assignPermissionToRole = async (req, res) => {
   try {

@@ -2,6 +2,7 @@ require("dotenv/config");
 
 const { PrismaClient } = require("@prisma/client");
 const { PrismaPg } = require("@prisma/adapter-pg");
+const bcrypt = require("bcryptjs");
 
 const adapter = new PrismaPg({
     connectionString: process.env.DATABASE_URL,
@@ -65,9 +66,7 @@ async function main() {
 
     console.log("Admin role ID:", adminRole.id);
 
-    // -----------------------------
     // 3. Connect permissions to role
-    // -----------------------------
     for (const permission of permissions) {
         await prisma.rolePermission.upsert({
             where: {
@@ -86,7 +85,26 @@ async function main() {
 
     console.log("Admin permissions assigned");
 
+    // 3b. Create default "user" role (no elevated permissions) so that
+    // newly self-registered users have a role to be assigned automatically.
+    const userRole = await prisma.role.upsert({
+        where: {
+            name: "user",
+        },
+        update: {},
+        create: {
+            name: "user",
+        },
+    });
+
+    console.log("Default user role ID:", userRole.id);
+
     // 4. Create admin user
+    const adminPasswordHash = await bcrypt.hash(
+        process.env.SEED_ADMIN_PASSWORD || "Admin@12345",
+        10
+    );
+
     const adminUser = await prisma.user.upsert({
         where: {
             email: "admin134@gmail.com",
@@ -95,19 +113,13 @@ async function main() {
         create: {
             name: "Admin User",
             email: "admin134@gmail.com",
-
-            // Replace this with a real bcrypt hash later
-            password: "$2b$10$REPLACE_WITH_REAL_BCRYPT_HASH",
-
+            password: adminPasswordHash,
             status: "ACTIVE",
         },
     });
 
     console.log("Admin user ID:", adminUser.id);
 
-    // -----------------------------
-    // 5. Connect user to admin role
-    // -----------------------------
     await prisma.userRole.upsert({
         where: {
             userId_roleId: {
