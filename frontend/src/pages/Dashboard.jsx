@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Users,
   ShieldCheck,
@@ -6,38 +7,76 @@ import {
 } from "lucide-react";
 
 import PageHeader from "../components/PageHeader";
-
-
-const stats = [
-
-  {
-    title: "Total Users",
-    value: "—",
-    icon: Users,
-  },
-
-  {
-    title: "Active Roles",
-    value: "—",
-    icon: ShieldCheck,
-  },
-
-  {
-    title: "Permissions",
-    value: "—",
-    icon: KeyRound,
-  },
-
-  {
-    title: "System Status",
-    value: "Online",
-    icon: Activity,
-  },
-
-];
+import api from "../api/client";
+import { useAuth } from "../context/AuthContext";
 
 
 export default function Dashboard() {
+  const { hasPermission } = useAuth();
+  const [counts, setCounts] = useState({ users: null, roles: null, permissions: null });
+
+  useEffect(() => {
+    let cancelled = false;
+
+    async function loadCounts() {
+      const requests = [];
+      requests.push(
+        hasPermission("users:READ")
+          ? api.get("/users").then((r) => (r.data.users || r.data.data || []).length)
+          : Promise.resolve(null)
+      );
+      requests.push(
+        hasPermission("roles:READ")
+          ? api.get("/roles").then((r) => (r.data.roles || r.data.data || []).length)
+          : Promise.resolve(null)
+      );
+      requests.push(
+        hasPermission("permissions:READ")
+          ? api.get("/permission").then((r) => (r.data.permissions || r.data.data || []).length)
+          : Promise.resolve(null)
+      );
+
+      const [users, roles, permissions] = await Promise.all(
+        requests.map((p) => p.catch(() => null))
+      );
+
+      if (!cancelled) {
+        setCounts({ users, roles, permissions });
+      }
+    }
+
+    loadCounts();
+    return () => {
+      cancelled = true;
+    };
+  }, [hasPermission]);
+
+  const stats = [
+    {
+      title: "Total Users",
+      value: counts.users ?? "—",
+      icon: Users,
+    },
+
+    {
+      title: "Active Roles",
+      value: counts.roles ?? "—",
+      icon: ShieldCheck,
+    },
+
+    {
+      title: "Permissions",
+      value: counts.permissions ?? "—",
+      icon: KeyRound,
+    },
+
+    {
+      title: "System Status",
+      value: "Online",
+      icon: Activity,
+    },
+
+  ];
 
   return (
     <>

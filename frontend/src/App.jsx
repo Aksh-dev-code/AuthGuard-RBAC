@@ -3,6 +3,7 @@ import { Navigate, Route, Routes } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 
 import Login from "./pages/Login";
+import Register from "./pages/Register";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import Roles from "./pages/Roles";
@@ -37,6 +38,18 @@ export default function App() {
         }
       />
 
+      {/* Register */}
+      <Route
+        path="/register"
+        element={
+          user ? (
+            <Navigate to="/" replace />
+          ) : (
+            <Register />
+          )
+        }
+      />
+
       {/* Protected application */}
       <Route element={<ProtectedRoute />}>
 
@@ -47,20 +60,26 @@ export default function App() {
             element={<Dashboard />}
           />
 
-          <Route
-            path="/users"
-            element={<Users />}
-          />
+          <Route element={<ProtectedRoute permission="users:READ" />}>
+            <Route
+              path="/users"
+              element={<Users />}
+            />
+          </Route>
 
-          <Route
-            path="/roles"
-            element={<Roles />}
-          />
+          <Route element={<ProtectedRoute permission="roles:READ" />}>
+            <Route
+              path="/roles"
+              element={<Roles />}
+            />
+          </Route>
 
-          <Route
-            path="/permissions"
-            element={<Permissions />}
-          />
+          <Route element={<ProtectedRoute permission="permissions:READ" />}>
+            <Route
+              path="/permissions"
+              element={<Permissions />}
+            />
+          </Route>
 
         </Route>
 
