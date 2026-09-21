@@ -66,7 +66,6 @@ export default function Login() {
 
     setSubmitting(true);
 
-
     try {
 
       await login(
@@ -194,6 +193,9 @@ export default function Login() {
           </button>
 
         </form>
+        <p className="auth-footer-link">
+          Don&apos;t have an account? <a href="/register">Create one</a>
+        </p>
 
       </div>
 

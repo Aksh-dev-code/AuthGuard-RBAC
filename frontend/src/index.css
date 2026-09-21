@@ -322,10 +322,6 @@ button {
 }
 
 
-/* =========================
-   PAGE
-========================= */
-
 .page-content {
   padding: 30px;
 
@@ -834,6 +830,55 @@ td {
 
   margin:
     7px 0 25px;
+}
+.auth-footer-link {
+  margin-top: 18px;
+  font-size: 13px;
+  color: #667085;
+  text-align: center;
+}
+
+.auth-footer-link a {
+  color: #101828;
+  font-weight: 600;
+  text-decoration: underline;
+}
+
+.alert.success {
+  background: #ecfdf3;
+  color: #067647;
+  border: 1px solid #abefc6;
+}
+
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(16, 24, 40, 0.45);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.modal-card {
+  background: #fff;
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 380px;
+  box-shadow: 0 20px 40px rgba(16, 24, 40, 0.2);
+}
+
+.modal-card h3 {
+  margin: 0 0 8px;
+  font-size: 17px;
+  color: #101828;
+}
+
+.modal-card p {
+  margin: 0 0 20px;
+  font-size: 13px;
+  color: #667085;
 }
 
 
