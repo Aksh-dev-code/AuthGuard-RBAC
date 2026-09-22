@@ -1,767 +1,148 @@
 # AuthGuard-RBAC
 
-A full-stack **Role-Based Access Control (RBAC)** application built with **React, Node.js, TypeScript Express, Prisma, and PostgreSQL**.
+A full-stack **Role-Based Access Control (RBAC)** system: JWT authentication, and
+granular, database-driven permissions for Users, Roles, and Permissions —
+built with React, Express, Prisma, and PostgreSQL.
 
-AuthGuard-RBAC allows administrators to manage users, roles, and permissions and control what users are allowed to access through role-based authorisation.
+**Live demo:** [https://auth-guard-rbac-ojxmkupw2-anuska-maity.vercel.app/]
 
 ---
 
 ## Features
 
-* User authentication
-* JWT-based authorisation
-* Password hashing with bcrypt
-* Role-Based Access Control (RBAC)
-* User management
-* Role management
-* Permission management
-* Assign roles to users
-* Assign permissions to roles
-* Remove roles from users
-* Remove permissions from roles
-* Protected API routes
-* React protected pages
-* PostgreSQL database
-* Prisma ORM
-* REST API architecture
+- **Authentication** — register, login, JWT-based sessions, session revalidation on page load
+- **Role-Based Access Control** — users are assigned one or more roles; roles are
+  assigned one or more permissions, through explicit join tables (`UserRole`,
+  `RolePermission`)
+- **Admin dashboard** — live counts of users, roles, and permissions
+- **User management** — list users, assign/remove roles, delete users
+- **Role management** — create/edit/delete roles, assign permissions to a role
+- **Permission management** — create/edit/delete permissions (`resource:ACTION` format,
+  e.g. `users:CREATE`)
+- **Defense in depth** — the UI hides actions a user lacks permission for, but every
+  request is independently re-checked and enforced on the backend (a hidden button is
+  not the security boundary — the API is)
 
----
+## Tech stack
 
-## Tech Stack
+| Layer | Tech |
+|---|---|
+| Frontend | React 19, Vite, React Router 7, Axios |
+| Backend | Node.js, Express 5 |
+| Database | PostgreSQL |
+| ORM | Prisma 7 (with `@prisma/adapter-pg` driver adapter) |
+| Auth | JSON Web Tokens (`jsonwebtoken`) + `bcryptjs` password hashing |
+| Deployment | Vercel (frontend as a static Vite build, backend as a serverless function) |
 
-### Frontend
+## Architecture
 
-* React
-* Vite
-* Axios
-* React Router
-* CSS
-
-### Backend
-
-* Node.js
-* TypeScript
-* Express.js
-* JWT
-* bcryptjs
-* Prisma ORM
-* PostgreSQL
-
-### Development Tools
-
-* VS Code
-* Insomnia / Postman
-* Git & GitHub
-
----
-
-## Project Architecture
-
-```text
+```
 AuthGuard-RBAC/
-│
-├── frontend/
-│   ├── src/
-│   │   ├── api/
-│   │   │   └── client.js
-│   │   │
-│   │   ├── components/
-│   │   │   ├── Header.jsx
-│   │   │   ├── Layout.jsx
-│   │   │   ├── PageHeader.jsx
-│   │   │   ├── ProtectedRoute.jsx
-│   │   │   └── Sidebar.jsx
-│   │   │
-│   │   ├── context/
-│   │   │   └── AuthContext.jsx
-│   │   │
-│   │   ├── pages/
-│   │   │   ├── Dashboard.jsx
-│   │   │   ├── Login.jsx
-│   │   │   ├── Permissions.jsx
-│   │   │   ├── Roles.jsx
-│   │   │   └── Users.jsx
-│   │   │
-│   │   ├── App.jsx
-│   │   ├── main.jsx
-│   │   └── styles.css
-│   │
-│   └── .env
-│
 ├── backend/
-│   ├── controllers/
-│   │   ├── authController.js
-│   │   ├── roleController.js
-│   │   ├── permissionController.js
-│   │   └── assignController.js
-│   │
-│   ├── routes/
-│   │   ├── authRoutes.js
-│   │   ├── roleRoutes.js
-│   │   ├── permissionRoutes.js
-│   │   └── assignRoutes.js
-│   │
-│   ├── middleware/
-│   │   ├── authMiddleware.js
-│   │   └── permissionMiddleware.js
-│   │
+│   ├── api/index.js          # Vercel serverless entry point
 │   ├── prisma/
-│   │   ├── schema.prisma
-│   │   └── seed.js
-│   │
-│   ├── server.js
-│   ├── package.json
-│   └── .env
-│
-└── README.md
+│   │   ├── schema.prisma     # User, Role, Permission, UserRole, RolePermission
+│   │   ├── config.js         # PrismaClient instance (driver-adapter based)
+│   │   └── migrations/
+│   ├── src/
+│   │   ├── controllers/      # auth, users, roles, permissions, assign
+│   │   ├── middleware/       # authMiddleware (JWT), checkPermission (RBAC)
+│   │   ├── routes/
+│   │   └── config/seed.ts    # seeds default roles/permissions + admin user
+│   └── server.js
+└── frontend/
+    ├── src/
+    │   ├── api/client.js     # axios instance, JWT injection, 401 handling
+    │   ├── context/AuthContext.jsx
+    │   ├── components/       # Header, Sidebar/Layout, ProtectedRoute
+    │   └── pages/             # Login, Register, Dashboard, Users, Roles, Permissions
+    └── vite.config.js
 ```
 
----
+### Data model
 
-# RBAC Architecture
+A user can hold multiple roles; a role can hold multiple permissions — modeled with
+explicit join tables rather than an implicit many-to-many, so each relationship carries
+its own identity and can be queried/managed directly:
 
-The application uses three main entities:
-
-```text
-User
-  │
-  │ has
-  ▼
-Role
-  │
-  │ has
-  ▼
-Permission
+```
+User ──< UserRole >── Role ──< RolePermission >── Permission
 ```
 
-A user can have multiple roles.
+## Getting started locally
 
-A role can have multiple permissions.
+### Prerequisites
+- Node.js 18+
+- A PostgreSQL database (local, or a free cloud instance — [Neon](https://neon.tech) or
+  [Supabase](https://supabase.com) both work well and give you a connection string in
+  under 2 minutes)
 
-This is implemented using two many-to-many relationship tables:
-
-```text
-User ───────< UserRole >─────── Role
-
-Role ───────< RolePermission >─────── Permission
+### 1. Clone and install
+```bash
+git clone https://github.com/Aksh-dev-code/AuthGuard-RBAC.git
+cd AuthGuard-RBAC
+cd backend && npm install
+cd ../frontend && npm install
 ```
 
----
+### 2. Configure environment variables
 
-# Database Schema
-
-## User
-
-Stores application users.
-
-```text
-id
-name
-email
-password
-status
-createdAt
-updatedAt
-```
-
-User status can be:
-
-```text
-ACTIVE
-INACTIVE
-SUSPENDED
-```
-
----
-
-## Role
-
-Stores roles such as:
-
-```text
-Admin
-Manager
-Editor
-User
-```
-
-Each role can have multiple permissions.
-
----
-
-## Permission
-
-Stores individual permissions.
-
-Examples:
-
-```text
-users:create
-users:read
-users:update
-users:delete
-
-roles:create
-roles:read
-roles:update
-roles:delete
-```
-
----
-
-## UserRole
-
-Connects users and roles.
-
-```text
-userId
-roleId
-```
-
-A user can have multiple roles.
-
----
-
-## RolePermission
-
-Connects roles and permissions.
-
-```text
-roleId
-permissionId
-```
-
-A role can have multiple permissions.
-
----
-
-# Authentication Flow
-
-The authentication flow works approximately like this:
-
-```text
-User
- │
- ▼
-Login Page
- │
- ▼
-POST /api/auth/login
- │
- ▼
-Backend
- │
- ├── Find user
- ├── Compare password
- └── Generate JWT
- │
- ▼
-JWT Token
- │
- ▼
-Frontend
- │
- ▼
-localStorage
- │
- ▼
-Authorization: Bearer <token>
-```
-
-Protected API requests send the JWT in the `Authorization` header.
-
----
-
-# Authorisation Flow
-
-After authentication, the user's permissions are determined through their roles.
-
-```text
-User
- │
- ├── Role: Admin
- │       │
- │       ├── users:create
- │       ├── users:read
- │       ├── users:update
- │       └── users:delete
- │
- └── Role: Editor
-         │
-         ├── users:read
-         └── users:update
-```
-
-The backend can then check whether the authenticated user has the required permission before allowing an operation.
-
----
-
-# API Endpoints
-
-## Authentication
-
-### Login
-
-```http
-POST /api/auth/login
-```
-
-Request:
-
-```json
-{
-  "email": "admin@example.com",
-  "password": "password"
-}
-```
-
----
-
-# User APIs
-
-Example:
-
-```http
-GET    /api/users
-POST   /api/users
-GET    /api/users/:id
-PUT    /api/users/:id
-DELETE /api/users/:id
-```
-
----
-
-# Role APIs
-
-Example:
-
-```http
-GET    /api/roles
-POST   /api/roles
-GET    /api/roles/:id
-PUT    /api/roles/:id
-DELETE /api/roles/:id
-```
-
----
-
-# Permission APIs
-
-Example:
-
-```http
-GET    /api/permissions
-POST   /api/permissions
-GET    /api/permissions/:id
-PUT    /api/permissions/:id
-DELETE /api/permissions/:id
-```
-
----
-
-# Role Assignment APIs
-
-## Assign Role to User
-
-```http
-POST /api/assign/role
-```
-
-Request:
-
-```json
-{
-  "userId": 1,
-  "roleId": 1
-}
-```
-
----
-
-## Remove Role from User
-
-```http
-DELETE /api/assign/role
-```
-
-Request:
-
-```json
-{
-  "userId": 1,
-  "roleId": 1
-}
-```
-
----
-
-# Permission Assignment APIs
-
-## Assign Permission to Role
-
-```http
-POST /api/assign/permission
-```
-
-Request:
-
-```json
-{
-  "roleId": 1,
-  "permissionId": 2
-}
-```
-
----
-
-## Remove Permission from Role
-
-```http
-DELETE /api/assign/permission
-```
-
-Request:
-
-```json
-{
-  "roleId": 1,
-  "permissionId": 2
-}
-```
-
----
-
-# Environment Variables
-
-## Backend
-
-Create:
-
-```text
-backend/.env
-```
-
-Example:
-
+`backend/.env` (copy from `backend/.env.example`):
 ```env
-DATABASE_URL="postgresql://postgres:YOUR_PASSWORD@localhost:5432/authguard_rbac"
-
-JWT_SECRET="your-super-secret-jwt-key"
-
+DATABASE_URL="postgresql://user:password@host:5432/authguard_rbac?sslmode=require"
+JWT_SECRET="a-long-random-string"
+JWT_EXPIRES_IN="1d"
+SEED_ADMIN_PASSWORD="choose-a-password"
 PORT=5000
 ```
 
-Do not commit `.env` to GitHub.
+`frontend/.env` — not required for local dev (Vite proxies `/api` to `localhost:5000`
+automatically, see `vite.config.js`). Only needed in production — see `.env.example`.
 
-Add:
-
-```text
-.env
-```
-
-to `.gitignore`.
-
----
-
-## Frontend
-
-Create:
-
-```text
-frontend/.env
-```
-
-Example:
-
-```env
-VITE_API_URL=http://localhost:5000/api
-```
-
-After changing the Vite environment variables, restart the frontend development server.
-
----
-
-# Installation
-
-## 1. Clone the repository
-
-```bash
-git clone <your-repository-url>
-cd AuthGuard-RBAC
-```
-
----
-
-# Backend Setup
-
-Go to the backend:
-
+### 3. Set up the database
 ```bash
 cd backend
-```
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Configure:
-
-```text
-backend/.env
-```
-
-with your PostgreSQL connection string.
-
----
-
-## Prisma Setup
-
-Generate Prisma Client:
-
-```bash
 npx prisma generate
-```
-
-Run database migrations:
-
-```bash
-npx prisma migrate dev
-```
-
-If your project uses an existing migration setup, run the migrations appropriate to that database.
-
----
-
-## Seed Database
-
-If a seed script is configured:
-
-```bash
+npx prisma migrate deploy
 npx prisma db seed
 ```
+This creates the schema and seeds:
+- An `admin` role with every permission
+- A default `user` role (no elevated permissions — assigned automatically on self-registration)
+- An admin account: `admin134@gmail.com` / `SEED_ADMIN_PASSWORD` from your `.env`
 
-This can create initial roles and permissions.
-
----
-
-# Start Backend
-
-If the project has a development script:
-
+### 4. Run it
 ```bash
-npm run dev
+# backend
+cd backend && npm start        # http://localhost:5000
+
+# frontend, in a second terminal
+cd frontend && npm run dev     # http://localhost:5173
 ```
 
-Otherwise:
+## API overview
 
-```bash
-npm start
-```
+All routes are mounted under `/api`.
 
-The backend should run on:
+| Method | Route | Description |
+|---|---|---|
+| POST | `/api/auth/register` | Create an account (default `user` role assigned) |
+| POST | `/api/auth/login` | Log in, returns a JWT |
+| GET | `/api/auth/me` | Current user (roles + permissions) |
+| PUT | `/api/auth/me` | Update own profile |
+| GET/POST/PUT/DELETE | `/api/users`, `/api/users/:id` | Manage users |
+| GET/POST/PUT/DELETE | `/api/roles`, `/api/roles/:id` | Manage roles |
+| GET/POST/PUT/DELETE | `/api/permission`, `/api/permission/:id` | Manage permissions |
+| POST/DELETE | `/api/assign/user-role` | Assign/remove a role from a user |
+| POST/DELETE | `/api/assign/role-permission` | Assign/remove a permission from a role |
 
-```text
-http://localhost:5000
-```
+Every route besides register/login requires a `Bearer <token>` header; role/permission/user
+management routes additionally require the caller to hold the matching permission
+(e.g. `roles:CREATE`) — admins bypass this check.
 
----
+## Deployment
 
-# Frontend Setup
-
-Open another terminal:
-
-```bash
-cd frontend
-```
-
-Install dependencies:
-
-```bash
-npm install
-```
-
-Start Vite:
-
-```bash
-npm run dev
-```
-
-The frontend will normally be available at:
-
-```text
-http://localhost:5173
-```
-
----
-
-# Testing With Insomnia
-
-You can test the backend independently from the React frontend.
-
-Example:
-
-```text
-POST http://localhost:5000/api/auth/login
-```
-
-Then use:
-
-```json
-{
-  "email": "admin@example.com",
-  "password": "your-password"
-}
-```
-
-After receiving a JWT, send it with protected requests:
-
-```text
-Authorization: Bearer <your-token>
-```
-
----
-
-# Example RBAC Setup
-
-Create a role:
-
-```text
-Admin
-```
-
-Create permissions:
-
-```text
-users:create
-users:read
-users:update
-users:delete
-
-roles:create
-roles:read
-roles:update
-roles:delete
-
-permissions:create
-permissions:read
-permissions:update
-permissions:delete
-```
-
-Assign permissions to Admin:
-
-```text
-Admin
- │
- ├── users:create
- ├── users:read
- ├── users:update
- ├── users:delete
- ├── roles:create
- ├── roles:read
- ├── roles:update
- ├── roles:delete
- ├── permissions:create
- ├── permissions:read
- ├── permissions:update
- └── permissions:delete
-```
-
-Then assign:
-
-```text
-Admin → User
-```
-
-The user can now perform operations allowed by the Admin role.
-
----
-
-# Security
-
-The project is designed around several security practices:
-
-* Passwords are hashed using bcrypt.
-* Authentication uses JWT.
-* Protected endpoints require authentication.
-* Authorisation is based on roles and permissions.
-* Database relationships use foreign keys.
-* Cascade deletion is configured for relationship tables.
-* Environment variables are used for secrets and database credentials.
-
-For production, additional protections should be added, including:
-
-* Refresh-token rotation
-* Rate limiting
-* HTTP security headers
-* Input validation
-* Request sanitisation
-* Secure cookies where appropriate
-* Token expiration and revocation strategy
-* Production database credentials
-* HTTPS
-
----
-
-# Future Improvements
-
-Possible improvements include:
-
-* Role and permission management UI
-* User creation/editing from the dashboard
-* Permission-based frontend rendering
-* Dynamic sidebar based on permissions
-* Search and pagination
-* Audit logs
-* Refresh tokens
-* Password reset
-* Email verification
-* Account lockout
-* Admin activity monitoring
-* Docker deployment
-* Automated testing
-* CI/CD pipeline
-* Production deployment
-
----
-
-# Project Goal
-
-The goal of **AuthGuard-RBAC** is to demonstrate how a real-world application can implement:
-
-```text
-Authentication
-      ↓
-JWT
-      ↓
-User
-      ↓
-Roles
-      ↓
-Permissions
-      ↓
-Protected Resources
-```
-
-It is designed as a practical full-stack project for understanding **authentication, authorisation, REST APIs, relational database design, Prisma ORM, and React frontend integration**.
-
----
-
-# Author
-
-**Aunska Maity**
-
-B.Tech Computer Science & Engineering
-
-GitHub: `github.com/Aksh-dev-code`
-
-LinkedIn: `https://www.linkedin.com/in/akshmaity/`
-
----
-
-# License
-
-This project is available for educational and personal use.
+See [`DEPLOYMENT.md`](./DEPLOYMENT.md) for the full Vercel deployment guide (frontend +
+backend as two separate Vercel projects, with a note on Prisma + serverless connection
+pooling).
 
