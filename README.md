@@ -4,7 +4,7 @@ A full-stack **Role-Based Access Control (RBAC)** system: JWT authentication, an
 granular, database-driven permissions for Users, Roles, and Permissions —
 built with React, Express, Prisma, and PostgreSQL.
 
-**Live demo:** [https://auth-guard-rbac-ojxmkupw2-anuska-maity.vercel.app/]
+**Live demo:** [https://auth-guard-rbac.vercel.app]
 
 ---
 
