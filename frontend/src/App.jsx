@@ -4,6 +4,8 @@ import { useAuth } from "./context/AuthContext";
 
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Attendance from "./pages/Attendance";
+import TeacherAssignments from "./pages/TeacherAssignments";
 import Dashboard from "./pages/Dashboard";
 import Users from "./pages/Users";
 import Roles from "./pages/Roles";
@@ -59,6 +61,11 @@ export default function App() {
             path="/"
             element={<Dashboard />}
           />
+          <Route path="/attendance" element={<Attendance />} />
+
+          <Route element={<ProtectedRoute permission="teachers:MANAGE" />}>
+            <Route path="/teacher-assignments" element={<TeacherAssignments />} />
+            </Route>
 
           <Route element={<ProtectedRoute permission="users:READ" />}>
             <Route

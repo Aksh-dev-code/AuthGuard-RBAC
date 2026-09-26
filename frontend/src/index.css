@@ -39,9 +39,6 @@ button {
 }
 
 
-/* =========================
-   LOADING
-========================= */
 
 .loading-screen {
   min-height: 100vh;
@@ -360,9 +357,7 @@ button {
 }
 
 
-/* =========================
-   BUTTONS
-========================= */
+
 
 .primary-button,
 .secondary-button {
@@ -416,9 +411,7 @@ button {
 }
 
 
-/* =========================
-   DASHBOARD
-========================= */
+
 
 .stats-grid {
   display: grid;
@@ -653,6 +646,20 @@ td {
   color: #475467;
 
   font-size: 11px;
+}
+.badge-success {
+  background: #ecfdf3;
+  color: #067647;
+}
+
+.badge-danger {
+  background: #fef3f2;
+  color: #b42318;
+}
+
+.badge-warning {
+  background: #fffaeb;
+  color: #b54708;
 }
 
 
