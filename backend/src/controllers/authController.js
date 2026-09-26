@@ -2,7 +2,7 @@ const prisma = require('../../prisma/config');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 
-const DEFAULT_ROLE_NAME = 'user';
+const DEFAULT_ROLE_NAME = 'student';
 
 // Shape a Prisma user (with roles: UserRole[] -> role: Role) into a safe API response
 function toSafeUser(user) {

@@ -15,100 +15,71 @@ const prisma = new PrismaClient({
 async function main() {
 
     // 1. Create permissions
-
     const permissionNames = [
-        "users:CREATE",
-        "users:READ",
-        "users:UPDATE",
-        "users:DELETE",
+        "users:CREATE", "users:READ", "users:UPDATE", "users:DELETE",
+        "roles:CREATE", "roles:READ", "roles:UPDATE", "roles:DELETE",
+        "permissions:CREATE", "permissions:READ", "permissions:UPDATE", "permissions:DELETE",
 
-        "roles:CREATE",
-        "roles:READ",
-        "roles:UPDATE",
-        "roles:DELETE",
-
-        "permissions:CREATE",
-        "permissions:READ",
-        "permissions:UPDATE",
-        "permissions:DELETE",
-
-        "resources:READ",
+        // attendance domain
+        "attendance:CREATE",        // mark attendance
+        "attendance:READ",          // view anyone's (principal/super_admin)
+        "attendance:READ_OWN",      // view own (student)
+        "attendance:READ_ASSIGNED", // view assigned students' (teacher)
+        "students:READ",
+        "teachers:MANAGE",          // assign/remove students to a teacher
     ];
 
     const permissions = [];
 
     for (const name of permissionNames) {
         const permission = await prisma.permission.upsert({
-            where: {
-                name,
-            },
+            where: { name },
             update: {},
-            create: {
-                name,
-            },
+            create: { name },
         });
-
         permissions.push(permission);
     }
 
     console.log(`Created/found ${permissions.length} permissions`);
-    // 2. Create admin role
 
-    const adminRole = await prisma.role.upsert({
-        where: {
-            name: "admin",
-        },
-        update: {},
-        create: {
-            name: "admin",
-        },
-    });
+    // 2. Create roles and connect their permissions
+    const roleDefinitions = {
+        super_admin: permissionNames, // everything
+        principal: ["attendance:READ", "users:READ", "teachers:MANAGE", "students:READ"],
+        teacher: ["attendance:CREATE", "attendance:READ_ASSIGNED", "students:READ"],
+        student: ["attendance:READ_OWN"],
+    };
 
-    console.log("Admin role ID:", adminRole.id);
+    const roles = {};
 
-    // 3. Connect permissions to role
-    for (const permission of permissions) {
-        await prisma.rolePermission.upsert({
-            where: {
-                roleId_permissionId: {
-                    roleId: adminRole.id,
-                    permissionId: permission.id,
-                },
-            },
+    for (const [roleName, perms] of Object.entries(roleDefinitions)) {
+        const role = await prisma.role.upsert({
+            where: { name: roleName },
             update: {},
-            create: {
-                roleId: adminRole.id,
-                permissionId: permission.id,
-            },
+            create: { name: roleName },
         });
+        roles[roleName] = role;
+
+        for (const permName of perms) {
+            const permission = permissions.find((p) => p.name === permName);
+            if (!permission) continue;
+            await prisma.rolePermission.upsert({
+                where: { roleId_permissionId: { roleId: role.id, permissionId: permission.id } },
+                update: {},
+                create: { roleId: role.id, permissionId: permission.id },
+            });
+        }
+        console.log(`${roleName} role configured with ${perms.length} permissions`);
     }
 
-    console.log("Admin permissions assigned");
-
-    // 3b. Create default "user" role (no elevated permissions) so that
-    // newly self-registered users have a role to be assigned automatically.
-    const userRole = await prisma.role.upsert({
-        where: {
-            name: "user",
-        },
-        update: {},
-        create: {
-            name: "user",
-        },
-    });
-
-    console.log("Default user role ID:", userRole.id);
-
-    // 4. Create admin user
+    // 3. Create the super admin user
     const adminPasswordHash = await bcrypt.hash(
         process.env.SEED_ADMIN_PASSWORD || "Admin@12345",
         10
     );
 
     const adminUser = await prisma.user.upsert({
-        where: {
-            email: "admin134@gmail.com",
-        },
+        where: { email: "admin134@gmail.com" },
         update: {},
         create: {
             name: "Admin User",
@@ -120,21 +91,22 @@ async function main() {
 
     console.log("Admin user ID:", adminUser.id);
 
+    // 4. Assign super_admin role to the admin user
     await prisma.userRole.upsert({
         where: {
             userId_roleId: {
                 userId: adminUser.id,
-                roleId: adminRole.id,
+                roleId: roles.super_admin.id,
             },
         },
         update: {},
         create: {
             userId: adminUser.id,
-            roleId: adminRole.id,
+            roleId: roles.super_admin.id,
         },
     });
 
-    console.log("Admin role assigned to user");
+    console.log("super_admin role assigned to admin user");
 }
 
 main()

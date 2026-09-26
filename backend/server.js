@@ -8,6 +8,9 @@ const roleRoutes = require("./src/routes/roleRoutes.js");
 const permissionRoutes = require("./src/routes/permissionRoutes.js");
 const assignRoutes = require("./src/routes/assignRoutes.js");
 const userRoutes = require("./src/routes/userRoutes.js");
+const attendanceRoutes = require("./src/routes/attendanceRoutes.js");
+const teacherRoutes = require("./src/routes/teacherRoutes.js");
+
 
 const app = express();
 
@@ -32,6 +35,8 @@ app.use("/api/roles", roleRoutes);
 app.use("/api/permission", permissionRoutes);
 app.use("/api/assign", assignRoutes);
 app.use("/api/users", userRoutes);
+app.use("/api/attendance", attendanceRoutes);
+app.use("/api/teachers", teacherRoutes);
 
 const PORT = process.env.PORT || 5000;
 
