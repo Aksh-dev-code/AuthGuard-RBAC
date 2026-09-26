@@ -26,6 +26,10 @@ model User {
 
   @@index([createdAt])
   @@index([status])
+  attendanceRecords  Attendance[]     @relation("StudentAttendance")
+  markedAttendances  Attendance[]     @relation("MarkedAttendance")
+  teacherOf          TeacherStudent[] @relation("TeacherAssignments")
+  studentOf          TeacherStudent[] @relation("StudentAssignments")
 }
 
 model Role {
@@ -69,4 +73,37 @@ model RolePermission {
 
   @@id([roleId, permissionId])
   @@index([permissionId])
+}
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+}
+
+model Attendance {
+  id         Int              @id @default(autoincrement())
+  studentId  Int
+  student    User             @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
+  date       DateTime         @db.Date
+  status     AttendanceStatus @default(PRESENT)
+  markedById Int
+  markedBy   User             @relation("MarkedAttendance", fields: [markedById], references: [id], onDelete: Cascade)
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+
+  @@unique([studentId, date])
+  @@index([studentId])
+}
+
+model TeacherStudent {
+  id        Int      @id @default(autoincrement())
+  teacherId Int
+  teacher   User     @relation("TeacherAssignments", fields: [teacherId], references: [id], onDelete: Cascade)
+  studentId Int
+  student   User     @relation("StudentAssignments", fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([teacherId, studentId])
+  @@index([teacherId])
+  @@index([studentId])
 }
