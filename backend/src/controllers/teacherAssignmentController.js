@@ -80,3 +80,24 @@ exports.getTeacherStudents = async (req, res) => {
         return res.status(500).json({ success: false, message: "Server error" });
     }
 };
+
+// GET /teachers/me/students - the logged-in teacher's own roster
+exports.getMyStudents = async (req, res) => {
+    try {
+        const assignments = await prisma.teacherStudent.findMany({
+            where: { teacherId: req.user.id },
+            include: {
+                student: { select: { id: true, name: true, email: true, status: true } },
+            },
+        });
+
+        return res.status(200).json({
+            success: true,
+            count: assignments.length,
+            students: assignments.map((a) => a.student),
+        });
+    } catch (error) {
+        console.error("Error fetching own students:", error);
+        return res.status(500).json({ success: false, message: "Server error" });
+    }
+};
