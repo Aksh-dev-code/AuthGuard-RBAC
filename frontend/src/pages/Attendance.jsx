@@ -52,18 +52,17 @@ export default function Attendance() {
     }
   }
 
-  async function loadMyStudents() {
-    if (!isTeacher || !user?.id) return;
-    try {
-      const response = await api.get(`/teachers/${user.id}/students`);
-      const rows = response.data.students || response.data.data || response.data;
-      setMyStudents(Array.isArray(rows) ? rows : []);
-    } catch {
-      // A teacher without any manage-level permission on this route is expected
-      // to get 403 here if they have no assignments yet - fail quietly.
-      setMyStudents([]);
-    }
+async function loadMyStudents() {
+  if (!isTeacher) return;
+  try {
+    const response = await api.get("/teachers/me/students");
+    const rows = response.data.students || response.data.data || response.data;
+    setMyStudents(Array.isArray(rows) ? rows : []);
+  } catch (err) {
+    setError(getErrorMessage(err, "Could not load your students."));
+    setMyStudents([]);
   }
+}
 
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
