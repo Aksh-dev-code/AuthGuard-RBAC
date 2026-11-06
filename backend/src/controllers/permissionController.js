@@ -1,7 +1,7 @@
 const prisma = require("../../prisma/config");
 
 // Permission names must look like "resource:ACTION", e.g. "users:CREATE"
-const PERMISSION_NAME_REGEX = /^[a-z]+:[A-Z]+$/;
+const PERMISSION_NAME_REGEX = /^[a-z]+:[A-Z_]+$/;
 
 exports.createPermissionController = async (req, res) => {
     try {

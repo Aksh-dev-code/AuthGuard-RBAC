@@ -1,55 +1,15 @@
-const prisma = require("../../prisma/config");
+const { getAccess } = require("../utils/access");
 
-const ADMIN_ROLE_NAME = "admin";
+// Uses req.user (set by authMiddleware, already includes roles + permissions),
+// so it costs no extra database query. super_admin / admin bypass the check.
+exports.checkPermission = (resource, action) => exports.checkAnyPermission(`${resource}:${action}`);
 
-exports.checkPermission = (resource, action) => {
-    const requiredPermission = `${resource}:${action}`;
-
-    return async (req, res, next) => {
-        try {
-            if (!req.user) {
-                return res.status(401).json({ success: false, message: "Not authenticated" });
-            }
-
-            const user = await prisma.user.findUnique({
-                where: { id: req.user.id },
-                include: {
-                    roles: {
-                        include: {
-                            role: {
-                                include: {
-                                    permissions: {
-                                        include: { permission: true },
-                                    },
-                                },
-                            },
-                        },
-                    },
-                },
-            });
-
-            if (!user) {
-                return res.status(404).json({ success: false, message: "User not found" });
-            }
-
-            // Admins bypass granular permission checks
-            const isAdmin = user.roles.some((ur) => ur.role.name === ADMIN_ROLE_NAME);
-            if (isAdmin) {
-                return next();
-            }
-
-            const hasPermission = user.roles.some((ur) =>
-                ur.role.permissions.some((rp) => rp.permission.name === requiredPermission)
-            );
-
-            if (!hasPermission) {
-                return res.status(403).json({ success: false, message: "Access denied" });
-            }
-
-            return next();
-        } catch (error) {
-            console.error("Error checking permission:", error);
-            return res.status(500).json({ success: false, message: "Server error" });
-        }
-    };
+// Allows the request if the caller holds ANY of the listed permissions.
+exports.checkAnyPermission = (...names) => (req, res, next) => {
+    if (!req.user) {
+        return res.status(401).json({ success: false, message: "Not authenticated" });
+    }
+    const access = getAccess(req.user);
+    if (names.some((n) => access.has(n))) return next();
+    return res.status(403).json({ success: false, message: "Access denied" });
 };

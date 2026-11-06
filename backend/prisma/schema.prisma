@@ -30,6 +30,11 @@ model User {
   markedAttendances  Attendance[]     @relation("MarkedAttendance")
   teacherOf          TeacherStudent[] @relation("TeacherAssignments")
   studentOf          TeacherStudent[] @relation("StudentAssignments")
+
+  // Coaching centre
+  enrollment         Enrollment?      @relation("StudentEnrollment")
+  teacherSubjects    TeacherSubject[] @relation("TeacherSubjects")
+  questionsCreated   Question[]       @relation("QuestionsCreated")
 }
 
 model Role {
@@ -88,13 +93,18 @@ model Attendance {
   status     AttendanceStatus @default(PRESENT)
   markedById Int
   markedBy   User             @relation("MarkedAttendance", fields: [markedById], references: [id], onDelete: Cascade)
+  classId    Int?
+  class      Class?           @relation(fields: [classId], references: [id], onDelete: SetNull)
   createdAt  DateTime         @default(now())
   updatedAt  DateTime         @updatedAt
 
   @@unique([studentId, date])
   @@index([studentId])
+  @@index([classId, date])
 }
 
+// DEPRECATED: replaced by TeacherSubject -> Subject -> Class -> Enrollment.
+// Kept only until the optional cleanup migration (see instructions).
 model TeacherStudent {
   id        Int      @id @default(autoincrement())
   teacherId Int
@@ -106,4 +116,67 @@ model TeacherStudent {
   @@unique([teacherId, studentId])
   @@index([teacherId])
   @@index([studentId])
+}
+
+model Class {
+  id        Int      @id @default(autoincrement())
+  name      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  enrollments Enrollment[]
+  subjects    Subject[]
+  attendance  Attendance[]
+}
+
+// A student belongs to at most ONE class (the unique on studentId).
+model Enrollment {
+  classId   Int
+  studentId Int
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student   User     @relation("StudentEnrollment", fields: [studentId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([classId, studentId])
+  @@unique([studentId])
+  @@index([classId])
+}
+
+model Subject {
+  id        Int      @id @default(autoincrement())
+  name      String
+  classId   Int
+  class     Class    @relation(fields: [classId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  teachers  TeacherSubject[]
+  questions Question[]
+
+  @@unique([classId, name])
+  @@index([classId])
+}
+
+model TeacherSubject {
+  teacherId Int
+  subjectId Int
+  teacher   User     @relation("TeacherSubjects", fields: [teacherId], references: [id], onDelete: Cascade)
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@id([teacherId, subjectId])
+  @@index([subjectId])
+}
+
+model Question {
+  id          Int      @id @default(autoincrement())
+  subjectId   Int
+  subject     Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  text        String   @db.Text
+  createdById Int
+  createdBy   User     @relation("QuestionsCreated", fields: [createdById], references: [id], onDelete: Cascade)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([subjectId])
 }

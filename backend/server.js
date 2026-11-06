@@ -9,7 +9,10 @@ const permissionRoutes = require("./src/routes/permissionRoutes.js");
 const assignRoutes = require("./src/routes/assignRoutes.js");
 const userRoutes = require("./src/routes/userRoutes.js");
 const attendanceRoutes = require("./src/routes/attendanceRoutes.js");
-const teacherRoutes = require("./src/routes/teacherRoutes.js");
+const classRoutes = require("./src/routes/classRoutes.js");
+const enrollmentRoutes = require("./src/routes/enrollmentRoutes.js");
+const subjectRoutes = require("./src/routes/subjectRoutes.js");
+const questionRoutes = require("./src/routes/questionRoutes.js");
 
 
 const app = express();
@@ -36,7 +39,10 @@ app.use("/api/permission", permissionRoutes);
 app.use("/api/assign", assignRoutes);
 app.use("/api/users", userRoutes);
 app.use("/api/attendance", attendanceRoutes);
-app.use("/api/teachers", teacherRoutes);
+app.use("/api/classes", classRoutes);
+app.use("/api/enrollments", enrollmentRoutes);
+app.use("/api/subjects", subjectRoutes);
+app.use("/api/questions", questionRoutes);
 
 const PORT = process.env.PORT || 5000;
 
