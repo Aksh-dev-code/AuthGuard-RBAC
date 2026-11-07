@@ -1,63 +1,42 @@
-import {
-  LayoutDashboard,
-  Users,
-  ShieldCheck,
-  KeyRound,
-  CalendarCheck,
-  UsersRound,
-  LogOut,
-} from "lucide-react";
-
+import { GraduationCap, LogOut } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
+import { visibleLinks } from "../utils/navLinks";
 
 export default function Sidebar() {
-  const { logout, hasPermission } = useAuth();
-
-  // Each link is shown only if the current user holds the permission
-  // that its page is actually gated by (see App.jsx's ProtectedRoute usage).
-  // "null" means always show (no permission required, e.g. Dashboard/Attendance).
-  const links = [
-    { to: "/", label: "Dashboard", icon: LayoutDashboard, permission: null },
-    { to: "/attendance", label: "Attendance", icon: CalendarCheck, permission: null },
-    { to: "/users", label: "Users", icon: Users, permission: "users:READ" },
-    { to: "/roles", label: "Roles", icon: ShieldCheck, permission: "roles:READ" },
-    { to: "/permissions", label: "Permissions", icon: KeyRound, permission: "permissions:READ" },
-    { to: "/teacher-assignments", label: "Teacher Assignments", icon: UsersRound, permission: "teachers:MANAGE" },
-  ];
-
-  const visibleLinks = links.filter(
-    (link) => !link.permission || hasPermission(link.permission)
-  );
+  const { logout, hasAnyPermission } = useAuth();
+  const links = visibleLinks(hasAnyPermission);
 
   return (
     <aside className="sidebar">
       <div className="brand">
-        <div className="brand-mark">A</div>
+        <div className="brand-mark">
+          <GraduationCap size={20} aria-hidden="true" />
+        </div>
         <div>
-          <strong>AuthGuard</strong>
-          <span>RBAC Console</span>
+          <strong>Coaching Centre</strong>
+          <span>Management</span>
         </div>
       </div>
 
       <nav className="sidebar-nav">
         <div className="nav-label">MAIN MENU</div>
 
-        {visibleLinks.map(({ to, label, icon: Icon }) => (
+        {links.map(({ to, label, icon: Icon }) => (
           <NavLink
             key={to}
             to={to}
             end={to === "/"}
             className={({ isActive }) => `nav-link ${isActive ? "active" : ""}`}
           >
-            <Icon size={19} />
+            <Icon size={19} aria-hidden="true" />
             <span>{label}</span>
           </NavLink>
         ))}
       </nav>
 
       <button className="logout-button" onClick={logout}>
-        <LogOut size={18} />
+        <LogOut size={18} aria-hidden="true" />
         <span>Sign out</span>
       </button>
     </aside>

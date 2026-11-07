@@ -1,264 +1,64 @@
-import { useEffect, useState } from "react";
-import { Calendar, Check, RefreshCw, UserCheck, X } from "lucide-react";
-import api, { getErrorMessage } from "../api/client";
+import { School } from "lucide-react";
+import { useSearchParams } from "react-router-dom";
 import PageHeader from "../components/PageHeader";
+import AttendanceRoster from "../components/AttendanceRoster";
+import StudentHistory from "../components/StudentHistory";
+import ClassPicker from "../components/ClassPicker";
+import EmptyState from "../components/EmptyState";
+import ErrorState from "../components/ErrorState";
+import { SkeletonList } from "../components/Skeleton";
 import { useAuth } from "../context/AuthContext";
+import { useClasses, useSelectedClass } from "../hooks/useClasses";
 
-function todayISO() {
-  return new Date().toISOString().slice(0, 10);
-}
-
+// Role-adaptive: student = own history | teacher = assigned classes | centre admin / super admin = all classes.
 export default function Attendance() {
-  const { user, hasRole, hasPermission } = useAuth();
+  const { hasPermission } = useAuth();
+  const staff = hasPermission("attendance:READ") || hasPermission("attendance:READ_ASSIGNED");
 
-  const isStudent = hasRole("student");
-  const isTeacher = hasRole("teacher");
-  const canReadAll = hasPermission("attendance:READ");
-  const canMark = hasPermission("attendance:CREATE");
-
-  const [records, setRecords] = useState([]);
-  const [myStudents, setMyStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-
-  // Mark-attendance form state (teachers only)
-  const [markForm, setMarkForm] = useState({ studentId: "", date: todayISO(), status: "PRESENT" });
-  const [marking, setMarking] = useState(false);
-
-  // Filters (principal / super_admin only)
-  const [filterStudentId, setFilterStudentId] = useState("");
-  const [filterFrom, setFilterFrom] = useState("");
-  const [filterTo, setFilterTo] = useState("");
-
-  async function loadAttendance() {
-    setLoading(true);
-    setError("");
-    try {
-      const params = {};
-      if (canReadAll) {
-        if (filterStudentId) params.studentId = filterStudentId;
-        if (filterFrom) params.from = filterFrom;
-        if (filterTo) params.to = filterTo;
-      }
-      const response = await api.get("/attendance", { params });
-      const rows = response.data.attendance || response.data.data || response.data;
-      setRecords(Array.isArray(rows) ? rows : []);
-    } catch (err) {
-      setError(getErrorMessage(err, "Could not load attendance."));
-      setRecords([]);
-    } finally {
-      setLoading(false);
-    }
+  if (!staff) {
+    return (
+      <>
+        <PageHeader title="My attendance" description="Your attendance record." />
+        <StudentHistory />
+      </>
+    );
   }
-
-async function loadMyStudents() {
-  if (!isTeacher) return;
-  try {
-    const response = await api.get("/teachers/me/students");
-    const rows = response.data.students || response.data.data || response.data;
-    setMyStudents(Array.isArray(rows) ? rows : []);
-  } catch (err) {
-    setError(getErrorMessage(err, "Could not load your students."));
-    setMyStudents([]);
-  }
+  return <StaffAttendance />;
 }
 
-  useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect -- initial data fetch on mount
-    loadAttendance();
-    loadMyStudents();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+function StaffAttendance() {
+  const { classes, state, error, reload } = useClasses();
+  const [params] = useSearchParams();
+  const [selected, select] = useSelectedClass(classes);
 
-  async function handleMarkSubmit(event) {
-    event.preventDefault();
-    setError("");
-
-    if (!markForm.studentId || !markForm.date) {
-      setError("Select a student and a date.");
-      return;
-    }
-
-    setMarking(true);
-    try {
-      await api.post("/attendance", {
-        studentId: Number(markForm.studentId),
-        date: markForm.date,
-        status: markForm.status,
-      });
-      setSuccess("Attendance recorded.");
-      await loadAttendance();
-    } catch (err) {
-      setError(getErrorMessage(err, "Failed to record attendance."));
-    } finally {
-      setMarking(false);
-    }
-  }
-
-  function handleFilterSubmit(event) {
-    event.preventDefault();
-    loadAttendance();
-  }
-
-  function statusBadgeClass(status) {
-    if (status === "PRESENT") return "badge badge-success";
-    if (status === "ABSENT") return "badge badge-danger";
-    return "badge badge-warning";
-  }
+  // /attendance?classId=3 (from the dashboard) wins over the remembered class
+  const fromUrl = classes.find((c) => c.id === Number(params.get("classId")));
+  const current = fromUrl || selected;
 
   return (
     <>
       <PageHeader
         title="Attendance"
-        description={
-          isStudent
-            ? "Your attendance record."
-            : isTeacher
-            ? "Mark and review attendance for your assigned students."
-            : "Attendance across the school."
-        }
+        description={current ? `${current.name}. Tap a status to save it instantly.` : "Mark attendance for your classes."}
       />
 
-      {error && <div className="alert error">{error}</div>}
-      {success && <div className="alert success">{success}</div>}
+      {state === "loading" && <SkeletonList rows={5} height={72} />}
+      {state === "error" && <ErrorState message={error} onRetry={reload} />}
 
-      {/* Mark attendance - teachers only */}
-      {isTeacher && canMark && (
-        <form onSubmit={handleMarkSubmit} className="panel" style={{ marginBottom: 16, padding: 20 }}>
-          <h3 style={{ marginTop: 0 }}>
-            <UserCheck size={18} className="inline-icon" />
-            Mark attendance
-          </h3>
-
-          {myStudents.length === 0 ? (
-            <p style={{ fontSize: 13, color: "#667085" }}>
-              You have no assigned students yet — ask a principal or admin to assign some to you.
-            </p>
-          ) : (
-            <div style={{ display: "flex", gap: 12, flexWrap: "wrap", alignItems: "flex-end" }}>
-              <div>
-                <label>Student</label>
-                <select
-                  value={markForm.studentId}
-                  onChange={(e) => setMarkForm((f) => ({ ...f, studentId: e.target.value }))}
-                  style={{ display: "block", padding: "6px 8px", borderRadius: 6, minWidth: 200 }}
-                >
-                  <option value="">Select student</option>
-                  {myStudents.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} ({s.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div>
-                <label>Date</label>
-                <div className="input-icon">
-                  <Calendar size={16} />
-                  <input
-                    type="date"
-                    value={markForm.date}
-                    onChange={(e) => setMarkForm((f) => ({ ...f, date: e.target.value }))}
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label>Status</label>
-                <select
-                  value={markForm.status}
-                  onChange={(e) => setMarkForm((f) => ({ ...f, status: e.target.value }))}
-                  style={{ display: "block", padding: "6px 8px", borderRadius: 6 }}
-                >
-                  <option value="PRESENT">Present</option>
-                  <option value="ABSENT">Absent</option>
-                  <option value="LATE">Late</option>
-                </select>
-              </div>
-
-              <button type="submit" className="primary-button" disabled={marking}>
-                {marking ? "Saving..." : "Save"}
-              </button>
-            </div>
-          )}
-        </form>
+      {state === "ready" && classes.length === 0 && (
+        <EmptyState
+          icon={School}
+          title="No classes yet"
+          text="Once a Centre Admin assigns you to a subject, its class appears here."
+        />
       )}
 
-      {/* Filters - principal / super_admin only */}
-      {canReadAll && (
-        <form onSubmit={handleFilterSubmit} className="toolbar" style={{ flexWrap: "wrap", gap: 10 }}>
-          <input
-            placeholder="Student ID (optional)"
-            value={filterStudentId}
-            onChange={(e) => setFilterStudentId(e.target.value)}
-            style={{ padding: "6px 8px", borderRadius: 6, maxWidth: 160 }}
-          />
-          <input
-            type="date"
-            value={filterFrom}
-            onChange={(e) => setFilterFrom(e.target.value)}
-            style={{ padding: "6px 8px", borderRadius: 6 }}
-          />
-          <input
-            type="date"
-            value={filterTo}
-            onChange={(e) => setFilterTo(e.target.value)}
-            style={{ padding: "6px 8px", borderRadius: 6 }}
-          />
-          <button type="submit" className="secondary-button">
-            Apply filters
-          </button>
-          <button type="button" className="secondary-button" onClick={loadAttendance}>
-            <RefreshCw size={16} />
-            Refresh
-          </button>
-        </form>
+      {state === "ready" && current && (
+        <>
+          <ClassPicker classes={classes} value={current} onChange={select} />
+          <AttendanceRoster key={current.id} classId={current.id} />
+        </>
       )}
-
-      <div className="panel table-panel">
-        <table>
-          <thead>
-            <tr>
-              {!isStudent && <th>Student</th>}
-              <th>Date</th>
-              <th>Status</th>
-              {!isStudent && <th>Marked by</th>}
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="4" className="empty">
-                  Loading attendance...
-                </td>
-              </tr>
-            ) : records.length === 0 ? (
-              <tr>
-                <td colSpan="4" className="empty">
-                  No attendance records found.
-                </td>
-              </tr>
-            ) : (
-              records.map((record) => (
-                <tr key={record.id}>
-                  {!isStudent && <td>{record.student?.name || "—"}</td>}
-                  <td>{new Date(record.date).toLocaleDateString()}</td>
-                  <td>
-                    <span className={statusBadgeClass(record.status)}>
-                      {record.status === "PRESENT" && <Check size={12} className="inline-icon" />}
-                      {record.status === "ABSENT" && <X size={12} className="inline-icon" />}
-                      {record.status}
-                    </span>
-                  </td>
-                  {!isStudent && <td>{record.markedBy?.name || "—"}</td>}
-                </tr>
-              ))
-            )}
-          </tbody>
-        </table>
-      </div>
     </>
   );
 }

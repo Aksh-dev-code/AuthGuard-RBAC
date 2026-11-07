@@ -54,7 +54,7 @@ export default function Register() {
         </div>
 
         <h1>Create an account</h1>
-        <p className="auth-subtitle">Sign up for the AuthGuard dashboard</p>
+        <p className="auth-subtitle">Sign up as a student of the Coaching Centre</p>
 
         {error && <div className="alert error">{error}</div>}
 

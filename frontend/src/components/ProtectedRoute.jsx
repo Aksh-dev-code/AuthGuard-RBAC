@@ -1,8 +1,9 @@
 import { Navigate, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
+// permission can be one name or a list (any of them is enough).
 export default function ProtectedRoute({ permission }) {
-  const { user, loading, isAuthenticated, hasPermission } = useAuth();
+  const { user, loading, isAuthenticated, hasAnyPermission } = useAuth();
   const location = useLocation();
 
   if (loading) {
@@ -15,7 +16,7 @@ export default function ProtectedRoute({ permission }) {
     return <Navigate to="/login" replace state={{ from: location }} />;
   }
 
-  if (permission && user && !hasPermission(permission)) {
+  if (permission && user && !hasAnyPermission([].concat(permission))) {
     return <Navigate to="/" replace />;
   }
 

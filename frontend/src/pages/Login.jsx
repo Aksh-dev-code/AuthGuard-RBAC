@@ -113,7 +113,7 @@ export default function Login() {
 
 
         <p className="auth-subtitle">
-          Sign in to your AuthGuard dashboard
+          Sign in to your Coaching Centre account
         </p>
 
 

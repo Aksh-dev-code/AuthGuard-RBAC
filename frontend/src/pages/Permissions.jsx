@@ -51,7 +51,7 @@ export default function Permissions() {
     event.preventDefault();
     setError("");
 
-    if (!/^[a-z]+:[A-Z]+$/.test(form.name)) {
+    if (!/^[a-z]+:[A-Z_]+$/.test(form.name)) {
       setError('Permission name must look like "resource:ACTION", e.g. "users:CREATE".');
       return;
     }

@@ -101,10 +101,17 @@ export function AuthProvider({ children }) {
 
   const hasRole = useCallback((roleName) => !!user?.roles?.includes(roleName), [user]);
 
+  const isAdminUser = !!user?.roles?.some((r) => r === "admin" || r === "super_admin");
+
   const hasPermission = useCallback(
-    (permissionName) =>
-      !!user?.roles?.includes("admin") || !!user?.permissions?.includes(permissionName),
-    [user]
+    (permissionName) => isAdminUser || !!user?.permissions?.includes(permissionName),
+    [user, isAdminUser]
+  );
+
+  // true if the user holds ANY of the listed permissions
+  const hasAnyPermission = useCallback(
+    (names) => isAdminUser || names.some((n) => !!user?.permissions?.includes(n)),
+    [user, isAdminUser]
   );
 
   const value = useMemo(
@@ -118,9 +125,10 @@ export function AuthProvider({ children }) {
       logout,
       hasRole,
       hasPermission,
+      hasAnyPermission,
     }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [user, loading, hasRole, hasPermission]
+    [user, loading, hasRole, hasPermission, hasAnyPermission]
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
